@@ -42,6 +42,17 @@ struct FallbackProviderTests {
         #expect(FallbackProvider.classify(text).title == "Meaningful line here")
     }
 
+    @Test func titleSkipsOneWordAppHeader() {
+        let text = "9:41\nLinkedIn\nSenior Product Designer\nAcme Pay · Berlin"
+        let extraction = FallbackProvider.classify(text)
+        #expect(extraction.title == "Senior Product Designer")
+        #expect(extraction.summary == "Acme Pay · Berlin")
+    }
+
+    @Test func oneWordLinesStillGiveATitle() {
+        #expect(FallbackProvider.classify("Weather\nLjubljana").title == "Weather")
+    }
+
     @Test func longTitleIsCutTo60Characters() {
         let long = String(repeating: "Design ", count: 20)
         let title = FallbackProvider.classify(long).title

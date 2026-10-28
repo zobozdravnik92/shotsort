@@ -32,6 +32,17 @@ struct DebugMenuView: View {
                 }
 
                 Section {
+                    Button("Add mock screenshots", systemImage: "photo.stack") {
+                        do {
+                            let added = try MockScreenshots.write()
+                            message = added == 0
+                                ? "Mock screenshots are already added."
+                                : "Added \(added) mock screenshot\(added == 1 ? "" : "s")."
+                            services.startIngest()
+                        } catch {
+                            message = "Couldn't add mocks: \(error.localizedDescription)"
+                        }
+                    }
                     Button("Import sample images from Files", systemImage: "square.and.arrow.down") {
                         isImporting = true
                     }
@@ -45,7 +56,7 @@ struct DebugMenuView: View {
                         confirmWipe = true
                     }
                 } footer: {
-                    Text("Imported samples go through the same pipeline. Deleting one only removes the app's copy.")
+                    Text("Mocks cover every category, plus one exact duplicate. Mocks and imported samples go through the same pipeline. Deleting one only removes the app's copy.")
                 }
 
                 if let message {

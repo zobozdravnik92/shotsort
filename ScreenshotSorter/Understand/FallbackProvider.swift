@@ -33,8 +33,11 @@ struct FallbackProvider: AIProvider {
     static func classify(_ text: String) -> Extraction {
         let lines = meaningfulLines(in: text)
         let category = category(for: text)
-        let title = lines.first ?? "Screenshot"
-        let summary = Extraction.truncate(lines.dropFirst().prefix(2).joined(separator: " "), to: 160)
+        // Skip one-word lines such as an app's header ("LinkedIn", "Receipt") when a fuller line follows.
+        let titleIndex = lines.firstIndex { $0.split(separator: " ").count >= 2 } ?? 0
+        let title = lines.indices.contains(titleIndex) ? lines[titleIndex] : "Screenshot"
+        let rest = lines.indices.contains(titleIndex) ? lines[(titleIndex + 1)...] : []
+        let summary = Extraction.truncate(rest.prefix(2).joined(separator: " "), to: 160)
         return Extraction(
             category: category,
             title: title,
