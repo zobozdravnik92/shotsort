@@ -60,51 +60,28 @@ struct ItemDetailView: View {
                     .padding(.vertical, 4)
                 }
             }
-
-            Section {
-                Label(processedLabel, systemImage: item.processedInCloud ? "cloud" : "iphone")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
         }
         .navigationTitle(item.category.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
-                Button("Keep", systemImage: "checkmark") {
-                    ItemStore.markKept(item, in: context)
-                }
-                .disabled(item.status == .kept)
-
-                Spacer()
-
-                Menu {
-                    ForEach(ItemCategory.allCases) { category in
-                        Button(category.name, systemImage: category.symbol) {
-                            item.category = category
-                            try? context.save()
-                        }
-                        .disabled(category == item.category)
-                    }
-                } label: {
-                    Label("Move", systemImage: "folder")
-                }
-
-                Spacer()
-
-                Button("Delete", systemImage: "trash", role: .destructive) {
+        .safeAreaInset(edge: .bottom) {
+            BottomBar {
+                WideButton(title: deleteTitle, systemImage: "trash", tint: .red) {
                     Task { await delete() }
                 }
                 .disabled(isDeleting)
             }
         }
-        .fullScreenCover(item: $viewer) { ScreenshotViewer(target: $0) }
+        .fullScreenCover(item: $viewer) { target in
+            ScreenshotViewer(
+                target: target,
+                onDelete: { Task { await delete() } },
+                deleteTitle: deleteTitle
+            )
+        }
     }
 
-    private var processedLabel: String {
-        if item.processedInCloud { return "Processed in the cloud" }
-        if item.processedBy == FallbackProvider.id { return "Processed on this iPhone with basic keyword sorting" }
-        return "Processed on this iPhone"
+    private var deleteTitle: String {
+        item.screenshots.count > 1 ? "Delete \(item.screenshots.count) screenshots" : "Delete screenshot"
     }
 
     private func delete() async {

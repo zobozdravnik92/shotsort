@@ -52,7 +52,13 @@ struct TriageView: View {
         .sheet(item: $result, onDismiss: { dismiss() }) { outcome in
             SessionSummarySheet(result: outcome) { result = nil }
         }
-        .fullScreenCover(item: $viewer) { ScreenshotViewer(target: $0) }
+        .fullScreenCover(item: $viewer) { target in
+            ScreenshotViewer(
+                target: target,
+                onKeep: { handle(.keep) },
+                onDelete: { handle(.delete) }
+            )
+        }
         .task {
             if session == nil {
                 session = TriageSession(category: category, context: context, deleter: services.deleter)
@@ -186,27 +192,6 @@ private struct Counter: View {
                 .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
-    }
-}
-
-private struct CircleButton: View {
-    let systemImage: String
-    let color: Color
-    let label: String
-    let size: CGFloat
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: size * 0.38, weight: .bold))
-                .foregroundStyle(color)
-                .frame(width: size, height: size)
-                .background(Color(.secondarySystemGroupedBackground), in: Circle())
-                .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
     }
 }
 

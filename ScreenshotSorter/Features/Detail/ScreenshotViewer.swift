@@ -9,6 +9,13 @@ struct ScreenshotViewer: View {
     }
 
     let target: Target
+    /// Keep and delete act on the item being viewed. The viewer closes first, then the action runs.
+    var onKeep: (() -> Void)?
+    var onDelete: (() -> Void)?
+    var keepDisabled = false
+    /// Used when there's only a delete action (from item detail), shown as one wide button.
+    var deleteTitle = "Delete screenshot"
+
     @Environment(\.dismiss) private var dismiss
     @State private var selection = 0
 
@@ -30,8 +37,37 @@ struct ScreenshotViewer: View {
                 }
             }
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .safeAreaInset(edge: .bottom) {
+                if let onKeep, let onDelete {
+                    triageActions(keep: onKeep, delete: onDelete)
+                } else if let onDelete {
+                    BottomBar(fade: .black) {
+                        WideButton(title: deleteTitle, systemImage: "trash", tint: .red) {
+                            dismiss()
+                            onDelete()
+                        }
+                    }
+                }
+            }
         }
         .onAppear { selection = target.start }
+    }
+
+    /// From triage: same round buttons and spacing as the deck, delete left, keep right.
+    private func triageActions(keep: @escaping () -> Void, delete: @escaping () -> Void) -> some View {
+        BottomBar(fade: .black) {
+            HStack(spacing: 112) {
+                CircleButton(systemImage: "xmark", color: .red, label: "Delete", size: 64) {
+                    dismiss()
+                    delete()
+                }
+                CircleButton(systemImage: "checkmark", color: .green, label: "Keep", size: 64) {
+                    dismiss()
+                    keep()
+                }
+                .disabled(keepDisabled)
+            }
+        }
     }
 }
 
@@ -62,6 +98,6 @@ private struct FullImage: View {
 }
 
 #Preview {
-    ScreenshotViewer(target: .init(assetIDs: ["preview-0", "preview-1"]))
+    ScreenshotViewer(target: .init(assetIDs: ["preview-0", "preview-1"]), onDelete: {})
         .environment(AppServices.preview)
 }

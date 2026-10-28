@@ -46,6 +46,16 @@ struct HomeView: View {
             .padding()
         }
         .background(Color(.systemGroupedBackground))
+        .safeAreaInset(edge: .bottom) {
+            if !items.isEmpty {
+                BottomBar {
+                    WideButton(title: "Start triage", systemImage: "rectangle.stack") {
+                        triage = TriageTarget(category: nil)
+                    }
+                    .disabled(unreviewed == 0)
+                }
+            }
+        }
         .navigationTitle("Screenshots")
         .navigationDestination(for: ItemCategory.self) { CategoryListView(category: $0) }
         .navigationDestination(for: Item.self) { ItemDetailView(item: $0) }
@@ -62,8 +72,7 @@ struct HomeView: View {
 
     private func backlogHeader(unreviewed: Int) -> some View {
         let fraction = items.isEmpty ? 0 : Double(items.count - unreviewed) / Double(items.count)
-        return VStack(spacing: 16) {
-            HStack(spacing: 16) {
+        return HStack(spacing: 16) {
                 ProgressRing(fraction: fraction)
                     .frame(width: 72, height: 72)
                 VStack(alignment: .leading, spacing: 4) {
@@ -74,18 +83,6 @@ struct HomeView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
-            }
-            Button {
-                triage = TriageTarget(category: nil)
-            } label: {
-                Label("Start triage", systemImage: "rectangle.stack")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(unreviewed == 0)
         }
     }
 

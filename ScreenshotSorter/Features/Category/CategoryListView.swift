@@ -64,12 +64,11 @@ struct CategoryListView: View {
                     Label("Sort and filter", systemImage: "line.3.horizontal.decrease.circle")
                 }
             }
-            ToolbarItem(placement: .bottomBar) {
-                Button {
+        }
+        .safeAreaInset(edge: .bottom) {
+            BottomBar {
+                WideButton(title: unreviewedCount == 0 ? "All reviewed" : "Triage \(unreviewedCount) new", systemImage: "rectangle.stack") {
                     triage = TriageTarget(category: category)
-                } label: {
-                    Label(unreviewedCount == 0 ? "All reviewed" : "Triage \(unreviewedCount) new", systemImage: "rectangle.stack")
-                        .labelStyle(.titleAndIcon)
                 }
                 .disabled(unreviewedCount == 0)
             }
