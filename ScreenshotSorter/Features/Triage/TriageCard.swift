@@ -4,44 +4,54 @@ import SwiftUI
 struct TriageCard: View {
     let item: Item
 
+    @Environment(\.theme) private var theme
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 28, style: .continuous) }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Label(item.category.name, systemImage: item.category.symbol)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.tint)
-            Text(item.title)
-                .font(.title2.bold())
-                .lineLimit(3)
-            FieldRows(item: item, limit: 4)
-            if !item.summary.isEmpty {
-                Text(item.summary)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(4)
+        VStack(alignment: .leading, spacing: 8) {
+            // Title and summary sit tight together; details follow.
+            VStack(alignment: .leading, spacing: 2) {
+                Text(theme.text(item.title))
+                    .font(theme.font(22))
+                    .tracking(theme.tracking(22))
+                    .lineSpacing(theme.wrapSpacing)
+                    .lineLimit(2)
+                if !item.summary.isEmpty {
+                    Text(item.summary)
+                        .font(.system(.subheadline, design: theme.fontDesign))
+                        .opacity(0.75)
+                        .lineLimit(2)
+                }
             }
-            Spacer(minLength: 0)
-            ThumbnailView(assetID: item.sortedScreenshots.first?.assetID)
-                .frame(maxWidth: .infinity)
-                .frame(height: 150)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            HStack {
-                Text(item.savedAt, format: .dateTime.day().month().year())
-                Spacer()
-                Text("Tap to see the screenshot")
+            VStack(spacing: 4) {
+                ForEach(item.category.fieldKeys.filter { item.displayValue(for: $0) != nil }.prefix(4), id: \.self) { key in
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(theme.text(ItemCategory.fieldLabel(key))).opacity(0.6)
+                        Spacer(minLength: 12)
+                        Text(item.displayValue(for: key) ?? "").multilineTextAlignment(.trailing)
+                    }
+                    .font(.system(.subheadline, design: theme.fontDesign))
+                }
             }
-            .font(.caption)
-            .foregroundStyle(.tertiary)
+            // The screenshot fills the rest of the card, so it can be read without opening it.
+            ThumbnailView(assetID: item.sortedScreenshots.first?.assetID, maxWidth: 900)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.top, 4)
         }
-        .padding(24)
+        .foregroundStyle(theme.cardInk(item.category))
+        .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background {
             // Shadow on the shape only, so it doesn't blur behind the text.
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-                .shadow(color: .black.opacity(0.08), radius: 16, y: 6)
+            shape
+                .fill(theme.cardFill(item.category))
+                .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(.separator, lineWidth: 0.5)
+            if let outline = theme.cardOutline {
+                shape.strokeBorder(outline, lineWidth: 3)
+            }
         }
     }
 }
@@ -114,6 +124,6 @@ struct SwipeableCard: View {
     SwipeableCard(item: SampleData.firstItem(in: AppServices.preview.container.mainContext), onSwipe: { _ in }, onTap: {})
         .padding()
         .frame(height: 560)
-        .background(Color(.systemGroupedBackground))
+        .background(Theme.sunshine.background)
         .environment(AppServices.preview)
 }

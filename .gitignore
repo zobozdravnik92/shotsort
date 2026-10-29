@@ -4,7 +4,6 @@
 # Xcode per-user and build files
 xcuserdata/
 *.xcuserstate
-project.xcworkspace/
 DerivedData/
 build/
 *.ipa

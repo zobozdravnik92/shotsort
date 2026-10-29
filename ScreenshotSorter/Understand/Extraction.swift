@@ -7,8 +7,10 @@ struct Extraction: Sendable, Equatable {
     var summary: String
     var fields: [String: String]
     var url: String?
-    /// Self-reported, 0–1. Under 0.5 is a candidate for Boost later.
+    /// Self-reported, 0–1. Under 0.5 is a candidate for Boost.
     var confidence: Double
+    /// The provider that produced this, when it differs from the one that was asked (Boost hands off to the cloud).
+    var source: String? = nil
 
     static let maxTitleLength = 60
     private static let placeholders: Set<String> = ["n/a", "na", "none", "unknown", "not specified", "not visible", "-", "null"]

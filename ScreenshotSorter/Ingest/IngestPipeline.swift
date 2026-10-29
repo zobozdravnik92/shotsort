@@ -9,6 +9,8 @@ final class IngestPipeline {
     private let worker: IngestWorker
     private let progress: IngestProgress
     private var task: Task<Void, Never>?
+    /// How many new screenshots the latest run found.
+    private(set) var lastFoundCount = 0
 
     init(container: ModelContainer, progress: IngestProgress) {
         self.worker = IngestWorker(modelContainer: container)
@@ -26,6 +28,7 @@ final class IngestPipeline {
             for source in sources { assets += await source.assets() }
             assets.sort { $0.createdAt > $1.createdAt }
             let pending = await worker.pending(assets)
+            self.lastFoundCount = pending.count
             guard !pending.isEmpty else { return }
             progress.begin(total: pending.count)
             let modelGaveUp = await worker.process(pending, sources: sources, provider: provider) { done in
@@ -34,6 +37,19 @@ final class IngestPipeline {
             if modelGaveUp { progress.markModelFailed() }
             progress.finish()
         }
+    }
+
+    /// Runs (or joins) a sort and waits for it. Returns how many new screenshots it found.
+    func runAndWait(sources: [any ScreenshotSource], provider: any AIProvider) async -> Int {
+        start(sources: sources, provider: provider)
+        await task?.value
+        return lastFoundCount
+    }
+
+    /// Sends unsure items already in the store to the cloud. Waits for any running sort to finish first.
+    func improveUnsure(with cloud: any AIProvider, onError: @escaping @Sendable (String) async -> Void) async -> Int {
+        await task?.value
+        return await worker.improveUnsure(with: cloud, onError: onError)
     }
 
     /// Stops the current run and waits for it to finish.
@@ -114,7 +130,8 @@ actor IngestWorker {
         if !modelDisabled && provider.id != FallbackProvider.id {
             do {
                 extraction = try await provider.extract(text: text, image: imageForModel)
-                providerID = provider.id
+                // Boost may hand an item to the cloud; record who actually sorted it.
+                providerID = extraction.source ?? provider.id
                 consecutiveFailures = 0
             } catch {
                 // Logs the error only, never screenshot text.
@@ -129,5 +146,39 @@ actor IngestWorker {
         ItemStore.insert(capture, extraction: extraction, providerID: providerID, in: modelContext)
         // Saving each item keeps duplicate checks accurate and lets Home fill in as items arrive.
         try? modelContext.save()
+    }
+
+    /// Re-sorts items the phone was unsure about with a cloud model, using the stored OCR text only.
+    /// Returns how many items were improved.
+    func improveUnsure(with cloud: any AIProvider, onError: @escaping @Sendable (String) async -> Void) async -> Int {
+        let threshold = BoostRouter.confidenceThreshold
+        let deletedRaw = ItemStatus.deleted.rawValue
+        let descriptor = FetchDescriptor<Item>(predicate: #Predicate { $0.confidence < threshold && $0.statusRaw != deletedRaw })
+        let unsure = ((try? modelContext.fetch(descriptor)) ?? []).filter { !$0.processedInCloud }
+        let breaker = CloudBreaker()
+        var improved = 0
+        for item in unsure {
+            let allowed = await breaker.allows()
+            if Task.isCancelled || !allowed { break }
+            let text = item.sortedScreenshots.map(\.ocrText).joined(separator: "\n")
+            guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+            do {
+                let result = try await cloud.extract(text: text, image: nil)
+                item.category = result.category
+                item.title = result.title
+                item.summary = result.summary
+                item.fields = result.fields
+                item.url = result.url
+                item.confidence = result.confidence
+                item.processedBy = cloud.id
+                try? modelContext.save()
+                await breaker.recordSuccess()
+                improved += 1
+            } catch {
+                await breaker.recordFailure(permanent: (error as? CloudError)?.isPermanent ?? false)
+                await onError(error.localizedDescription)
+            }
+        }
+        return improved
     }
 }

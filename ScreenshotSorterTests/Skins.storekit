@@ -1,0 +1,32 @@
+{
+  "identifier": "6F3C2A1E",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "1.00",
+      "familyShareable": true,
+      "internalID": "6740000003",
+      "localizations": [
+        {
+          "description": "Radio-dial greens and LCD type for Screenshot Sorter.",
+          "displayName": "Retro Analog skin",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.rokpremuz.ScreenshotSorter.skin.retro",
+      "referenceName": "Retro Analog skin",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

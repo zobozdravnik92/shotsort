@@ -6,6 +6,14 @@ enum Milestone: Equatable, Sendable {
     case allClear(ItemCategory)
 
     var message: String { RewardCopy.message(for: self) }
+
+    /// Shown as a full-screen popup rather than a small toast.
+    var isCelebration: Bool {
+        switch self {
+        case .streak, .allClear: true
+        case .spaceFreed: false
+        }
+    }
 }
 
 /// Decides when a moment is earned (spec §8, Phase 1). Each milestone fires once per session.

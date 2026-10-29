@@ -16,16 +16,39 @@ struct RootView: View {
                 OnboardingView {
                     hasOnboarded = true
                     services.startIngest()
+                    services.watchLibrary()
+                    // With full access the app can tell you about new screenshots, so ask once.
+                    if PhotoAccess.isFull {
+                        Task { _ = await NewScreenshots.requestNotificationPermission() }
+                    }
                 }
             }
         }
+        // The chosen skin applies everywhere: colours, accent, and light or dark.
+        .environment(\.theme, services.skins.theme)
+        .tint(services.skins.theme.accent)
+        .preferredColorScheme(services.skins.selected.colorScheme)
         .task {
-            services.prepare()
-            if hasOnboarded { services.startIngest() }
+            guard !AppServices.isHostingTests else { return }
+            await services.skins.start()
         }
-        // New screenshots are processed each time the app comes to the front.
+        .task {
+            guard !AppServices.isHostingTests else { return }
+            services.prepare()
+            if hasOnboarded {
+                services.startIngest()
+                services.watchLibrary()
+            }
+        }
+        // New screenshots are processed each time the app comes to the front,
+        // and a background check is booked when it leaves.
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active && hasOnboarded { services.startIngest() }
+            guard hasOnboarded, !AppServices.isHostingTests else { return }
+            switch phase {
+            case .active: services.startIngest()
+            case .background: if PhotoAccess.isFull { NewScreenshots.scheduleBackgroundCheck() }
+            default: break
+            }
         }
     }
 }

@@ -23,19 +23,23 @@ struct BottomBar<Content: View>: View {
 struct WideButton: View {
     let title: String
     let systemImage: String
-    var tint: Color = .accentColor
+    /// nil uses the skin's accent.
+    var tint: Color? = nil
     let action: () -> Void
+
+    @Environment(\.theme) private var theme
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.headline)
+            Label(theme.text(title), systemImage: systemImage)
+                .font(.system(.headline, design: theme.fontDesign))
+                .tracking(theme.uppercase ? 1 : 0)
+                .foregroundStyle(tint == nil ? (theme.buttonInk ?? .white) : .white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
-        .tint(tint)
+        .tint(tint ?? theme.buttonFill ?? theme.accent)
     }
 }
 
@@ -49,7 +53,7 @@ struct WideButton: View {
         BottomBar {
             VStack(spacing: 12) {
                 WideButton(title: "Start triage", systemImage: "rectangle.stack") {}
-                WideButton(title: "Delete screenshot", systemImage: "trash", tint: .red) {}
+                WideButton(title: "Delete screenshot", systemImage: "trash", tint: .deleteRed) {}
             }
         }
     }

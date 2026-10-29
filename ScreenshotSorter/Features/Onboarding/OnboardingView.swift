@@ -30,7 +30,7 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: 20) {
                 Label("Only your screenshots are read, never your other photos.", systemImage: "camera.viewfinder")
-                Label("Nothing leaves your phone. Sorting happens on this iPhone.", systemImage: "lock.shield")
+                Label("Nothing leaves your phone. Sorting happens on this iPhone, unless you turn on Boost.", systemImage: "lock.shield")
                 Label("You confirm every delete, and iOS keeps deleted screenshots for 30 days.", systemImage: "arrow.uturn.backward.circle")
             }
             .font(.callout)

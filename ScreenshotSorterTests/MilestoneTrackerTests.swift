@@ -1,4 +1,5 @@
 import Foundation
+import Photos
 import Testing
 @testable import ScreenshotSorter
 
@@ -56,5 +57,41 @@ struct TriageMilestoneTests {
 
         #expect(session.swipe(.keep).isEmpty)
         #expect(session.swipe(.delete) == [.allClear(.jobs)])
+    }
+}
+
+@MainActor
+struct CongratsPopupTests {
+    @Test func tenthSortShowsTheCongratsPopup() throws {
+        let context = try makeTestContext()
+        for index in 0..<12 {
+            let extraction = Extraction(category: index.isMultiple(of: 2) ? .jobs : .posts, title: "Item \(index)", summary: "", fields: [:], url: nil, confidence: 1)
+            let capture = makeCapture("c\(index)", hash: "h\(index)", createdAt: Date(timeIntervalSince1970: Double(1_000 - index)))
+            ItemStore.insert(capture, extraction: extraction, providerID: "test", in: context)
+        }
+        try context.save()
+        let session = TriageSession(category: nil, context: context, deleter: FakeDeleter(confirms: true))
+
+        for _ in 0..<9 {
+            #expect(!session.swipe(.keep).contains { $0.isCelebration })
+        }
+        let tenth = session.swipe(.delete)
+        #expect(tenth.contains(.streak(10)))
+        #expect(tenth.allSatisfy { $0.isCelebration })
+        #expect(session.reviewedCount == 10)
+    }
+}
+
+struct NewScreenshotAlertTests {
+    @Test func notifiesOnlyWithFullAccessAlertsOnAndNewScreenshots() {
+        #expect(NewScreenshots.shouldNotify(access: .authorized, alertsOn: true, newCount: 3))
+        #expect(!NewScreenshots.shouldNotify(access: .limited, alertsOn: true, newCount: 3))
+        #expect(!NewScreenshots.shouldNotify(access: .authorized, alertsOn: false, newCount: 3))
+        #expect(!NewScreenshots.shouldNotify(access: .authorized, alertsOn: true, newCount: 0))
+    }
+
+    @Test func notificationTextCountsScreenshots() {
+        #expect(NewScreenshots.notificationText(newCount: 1).body == "1 new screenshot is sorted and ready to triage.")
+        #expect(NewScreenshots.notificationText(newCount: 4).body == "4 new screenshots are sorted and ready to triage.")
     }
 }

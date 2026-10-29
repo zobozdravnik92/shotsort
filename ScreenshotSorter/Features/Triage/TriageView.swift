@@ -33,7 +33,7 @@ struct TriageView: View {
             }
         }
         .padding()
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .background { ThemedBackground() }
         .overlay(alignment: .top) {
             if let toast {
                 MilestoneToast(milestone: toast)
@@ -94,16 +94,11 @@ struct TriageView: View {
     }
 
     private func controls(_ session: TriageSession) -> some View {
-        HStack(spacing: 32) {
+        HStack(spacing: 112) {
             CircleButton(systemImage: "xmark", color: .red, label: "Delete", size: 64) {
                 handle(.delete)
             }
             .disabled(session.current == nil)
-
-            CircleButton(systemImage: "arrow.uturn.backward", color: .gray, label: "Undo", size: 48) {
-                withAnimation(.snappy) { session.undo() }
-            }
-            .disabled(!session.canUndo)
 
             CircleButton(systemImage: "checkmark", color: .green, label: "Keep", size: 64) {
                 handle(.keep)
@@ -125,12 +120,10 @@ struct TriageView: View {
 
     private func show(_ milestone: Milestone) {
         Haptics.milestone()
-        if case .allClear = milestone {
-            withAnimation { allClear = milestone }
-            Task {
-                try? await Task.sleep(for: .seconds(2.5))
-                withAnimation { if allClear == milestone { allClear = nil } }
-            }
+        // Streaks (10, 25, 50…) and all-clear moments get the full-screen congrats popup.
+        if milestone.isCelebration {
+            // Stays until dismissed, so it's never missed.
+            withAnimation(.spring(duration: 0.4)) { allClear = milestone }
         } else {
             withAnimation(.spring(duration: 0.35)) { toast = milestone }
             Task {
@@ -160,19 +153,19 @@ private struct TriageTopBar: View {
     let onDone: () -> Void
 
     var body: some View {
-        HStack(spacing: 20) {
-            Counter(value: "\(session.reviewedCount)", label: "Reviewed")
-            Counter(value: "\(session.deletedCount)", label: "Deleted")
-            Counter(value: ByteText.short(session.pendingBytes), label: "To free")
-            Spacer()
+        HStack(spacing: 6) {
+            // One counter: every keep or delete adds one.
+            Counter(value: "\(session.reviewedCount)", label: "sorted")
+            Spacer(minLength: 4)
             Button(action: onDone) {
                 if isFinishing {
                     ProgressView()
                 } else {
-                    Text("Done").bold()
+                    Text("Done").bold().lineLimit(1)
                 }
             }
             .buttonStyle(.bordered)
+            .fixedSize()
             .disabled(isFinishing)
         }
     }
@@ -181,16 +174,25 @@ private struct TriageTopBar: View {
 private struct Counter: View {
     let value: String
     let label: String
+    @Environment(\.theme) private var theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        // A pill: value then label, in the skin's card style.
+        HStack(spacing: 4) {
             Text(value)
-                .font(.headline.monospacedDigit())
+                .font(.system(size: 15, weight: .bold, design: theme.fontDesign).monospacedDigit())
                 .contentTransition(.numericText())
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(theme.text(label))
+                .font(.system(size: 13, weight: .semibold, design: theme.fontDesign))
+                .opacity(0.85)
         }
+        .lineLimit(1)
+        .foregroundStyle(.white)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        // A slightly darker shade of the screen background, no border.
+        .background(theme.background.mix(with: .black, by: 0.18), in: Capsule())
+        .fixedSize()
         .accessibilityElement(children: .combine)
     }
 }

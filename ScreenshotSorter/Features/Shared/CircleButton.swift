@@ -9,6 +9,7 @@ struct CircleButton: View {
     let action: () -> Void
 
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.theme) private var theme
 
     var body: some View {
         Button(action: action) {
@@ -16,7 +17,10 @@ struct CircleButton: View {
                 .font(.system(size: size * 0.38, weight: .bold))
                 .foregroundStyle(color)
                 .frame(width: size, height: size)
-                .background(Color(.secondarySystemGroupedBackground), in: Circle())
+                .background(theme.cardFill(.other), in: Circle())
+                .overlay {
+                    if let outline = theme.cardOutline { Circle().strokeBorder(outline, lineWidth: 3) }
+                }
                 .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
                 .opacity(isEnabled ? 1 : 0.4)
         }

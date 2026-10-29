@@ -19,6 +19,7 @@ struct MilestoneToast: View {
 struct AllClearView: View {
     let milestone: Milestone
     let onDismiss: () -> Void
+    @Environment(\.theme) private var theme
 
     var body: some View {
         ZStack {
@@ -28,11 +29,18 @@ struct AllClearView: View {
             VStack(spacing: 16) {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 72))
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(theme.ink)
                     .symbolEffect(.bounce, options: .nonRepeating)
+                Text(theme.text("Congrats!"))
+                    .font(theme.font(36))
+                    .tracking(theme.tracking(36))
+                    .foregroundStyle(theme.ink)
                 Text(milestone.message)
-                    .font(.title2.bold())
+                    .font(.system(.title3, design: theme.fontDesign).weight(.semibold))
+                    .foregroundStyle(theme.ink.opacity(0.8))
                     .multilineTextAlignment(.center)
+                WideButton(title: "Keep going", systemImage: "arrow.right", action: onDismiss)
+                    .padding(.top, 12)
             }
             .padding(32)
         }

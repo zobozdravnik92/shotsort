@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AA0000000000000000000052 /* ClaudeForFoundationModels in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000051 /* ClaudeForFoundationModels */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		AA0000000000000000000030 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -39,6 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA0000000000000000000052 /* ClaudeForFoundationModels in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +95,7 @@
 			);
 			name = ScreenshotSorter;
 			packageProductDependencies = (
+				AA0000000000000000000051 /* ClaudeForFoundationModels */,
 			);
 			productName = ScreenshotSorter;
 			productReference = AA0000000000000000000006 /* ScreenshotSorter.app */;
@@ -146,6 +152,9 @@
 			);
 			mainGroup = AA0000000000000000000002;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AA0000000000000000000050 /* XCRemoteSwiftPackageReference "ClaudeForFoundationModels" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA0000000000000000000003 /* Products */;
 			projectDirPath = "";
@@ -269,6 +278,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Screenshot Sorter";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Screenshot Sorter reads your screenshots to sort and summarise them on this iPhone, and deletes only the ones you choose. Nothing leaves your phone.";
 				INFOPLIST_KEY_PHPhotoLibraryPreventAutomaticLimitedAccessAlert = YES;
@@ -299,6 +309,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Screenshot Sorter";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Screenshot Sorter reads your screenshots to sort and summarise them on this iPhone, and deletes only the ones you choose. Nothing leaves your phone.";
 				INFOPLIST_KEY_PHPhotoLibraryPreventAutomaticLimitedAccessAlert = YES;
@@ -386,6 +397,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA0000000000000000000050 /* XCRemoteSwiftPackageReference "ClaudeForFoundationModels" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/anthropics/ClaudeForFoundationModels.git";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 0.2.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA0000000000000000000051 /* ClaudeForFoundationModels */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA0000000000000000000050 /* XCRemoteSwiftPackageReference "ClaudeForFoundationModels" */;
+			productName = ClaudeForFoundationModels;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA0000000000000000000001 /* Project object */;
 }

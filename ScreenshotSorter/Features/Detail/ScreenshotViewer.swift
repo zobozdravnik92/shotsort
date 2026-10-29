@@ -42,7 +42,7 @@ struct ScreenshotViewer: View {
                     triageActions(keep: onKeep, delete: onDelete)
                 } else if let onDelete {
                     BottomBar(fade: .black) {
-                        WideButton(title: deleteTitle, systemImage: "trash", tint: .red) {
+                        WideButton(title: deleteTitle, systemImage: "trash", tint: .deleteRed) {
                             dismiss()
                             onDelete()
                         }

@@ -32,6 +32,22 @@ struct DebugMenuView: View {
                 }
 
                 Section {
+                    Button("Test new-screenshot alert", systemImage: "bell.badge") {
+                        Task {
+                            do {
+                                try MockScreenshots.writeFresh()
+                                message = "Added one new screenshot. Running the background check…"
+                                await services.backgroundCheck()
+                                message = "Background check done. A notification should appear; tap it to open triage."
+                            } catch {
+                                message = "Couldn't add a screenshot: \(error.localizedDescription)"
+                            }
+                        }
+                    }
+                    Button("Simulate notification tap", systemImage: "hand.tap") {
+                        // Same call the notification handler makes.
+                        NotificationRouter.shared.requestTriage()
+                    }
                     Button("Add mock screenshots", systemImage: "photo.stack") {
                         do {
                             let added = try MockScreenshots.write()

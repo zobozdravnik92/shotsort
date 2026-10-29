@@ -200,6 +200,24 @@ enum MockScreenshots {
         return added
     }
 
+    /// Writes one new, unique job-post mock without starting a sort. Used to test the background check.
+    static func writeFresh() throws {
+        let roles = ["Senior UX Designer", "Lead Product Designer", "Design Systems Engineer", "UX Researcher", "Brand Designer"]
+        let companies = ["Orbit Labs", "Fernway", "Kitebird", "Plainsight", "Moonvale"]
+        let stamp = Int(Date.now.timeIntervalSince1970)
+        let mock = Mock(name: "fresh-\(stamp)", app: "LinkedIn", accent: linkedIn, daysAgo: 0, blocks: [
+            .title(roles.randomElement()!),
+            .subtitle("\(companies.randomElement()!) · Remote"),
+            .meta("Full-time · Posted \(stamp % 9 + 1) hours ago · Ref \(stamp)"),
+            .gap,
+            .body("We're hiring a designer to shape our next product. Requirements: 4+ years of experience."),
+            .button("Easy Apply"),
+        ])
+        try FileManager.default.createDirectory(at: SampleSource.folder, withIntermediateDirectories: true)
+        guard let data = render(mock).pngData() else { return }
+        try data.write(to: SampleSource.folder.appending(path: "mock-\(mock.name).png"))
+    }
+
     static func render(_ mock: Mock) -> UIImage {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
