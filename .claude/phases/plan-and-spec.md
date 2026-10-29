@@ -1,0 +1,1 @@
+/Users/rokpremuz/Documents/repos/vellum-ai/claude-skills/phases/plan-and-spec.md

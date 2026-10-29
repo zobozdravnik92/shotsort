@@ -1,0 +1,1 @@
+/Users/rokpremuz/Documents/repos/vellum-ai/claude-skills/skills/safe-blitz-done//SKILL.md
