@@ -9,7 +9,12 @@ struct CategoryListView: View {
     @State private var unreviewedOnly = false
     @State private var remoteOnly = false
     @State private var triage: TriageTarget?
+    @State private var opened: Item?
+    @State private var peek: Item?
+    @State private var peekOffset: CGSize = .zero
     @Environment(\.theme) private var theme
+    @Environment(\.modelContext) private var context
+    @Environment(AppServices.self) private var services
 
     enum SortOrder: String, CaseIterable, Identifiable {
         case newest = "Newest"
@@ -57,10 +62,11 @@ struct CategoryListView: View {
                     }
                 }
                 ForEach(shown) { item in
-                    NavigationLink(value: item) {
-                        ItemRow(item: item)
+                    PeekableRow(item: item, peek: $peek, peekOffset: $peekOffset) {
+                        opened = item
+                    } onDelete: {
+                        await delete(item)
                     }
-                    .buttonStyle(PressableCardStyle())
                 }
             }
             .padding(.horizontal)
@@ -91,6 +97,73 @@ struct CategoryListView: View {
             }
         }
         .fullScreenCover(item: $triage) { TriageView(category: $0.category) }
+        .navigationDestination(item: $opened) { ItemDetailView(item: $0) }
+        .overlay {
+            if let peek {
+                PeekOverlay(item: peek, offset: peekOffset)
+            }
+        }
+        .animation(.spring(duration: 0.25, bounce: 0.2), value: peek?.id)
+    }
+
+    /// Deletes the item's screenshots (iOS asks to confirm) and erases what was read from them.
+    private func delete(_ item: Item) async {
+        _ = await DeleteCommitter.deleteItem(item, deleter: services.deleter, context: context)
+    }
+}
+
+/// A card that opens on tap. Press and hold to preview the screenshot; keep holding and flick to delete.
+private struct PeekableRow: View {
+    let item: Item
+    @Binding var peek: Item?
+    @Binding var peekOffset: CGSize
+    let onOpen: () -> Void
+    let onDelete: () async -> Void
+
+    var body: some View {
+        ItemRow(item: item)
+            .scaleEffect(peek?.id == item.id ? 0.97 : 1)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onOpen)
+            .gesture(
+                PressAndDragGesture {
+                    Haptics.keep()
+                    peekOffset = .zero
+                    peek = item
+                } onChanged: { translation in
+                    peekOffset = translation
+                } onEnded: { translation, velocity in
+                    if Peek.isDelete(translation: translation.width, velocity: velocity) {
+                        flyOffAndDelete()
+                    } else {
+                        close()
+                    }
+                } onCancelled: {
+                    close()
+                }
+            )
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint("Touch and hold to preview the screenshot.")
+            .accessibilityAction(named: "Delete") { Task { await onDelete() } }
+    }
+
+    private func flyOffAndDelete() {
+        Haptics.delete()
+        withAnimation(.easeOut(duration: 0.2)) {
+            peekOffset = CGSize(width: Peek.deleteDirection * 700, height: peekOffset.height + 60)
+        } completion: {
+            peek = nil
+            peekOffset = .zero
+            Task { await onDelete() }
+        }
+    }
+
+    private func close() {
+        withAnimation(.spring(duration: 0.25, bounce: 0.2)) {
+            peek = nil
+            peekOffset = .zero
+        }
     }
 }
 
