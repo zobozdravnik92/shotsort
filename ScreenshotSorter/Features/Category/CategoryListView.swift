@@ -103,7 +103,7 @@ struct CategoryListView: View {
                 PeekOverlay(item: peek, offset: peekOffset)
             }
         }
-        .animation(.spring(duration: 0.25, bounce: 0.2), value: peek?.id)
+        .animation(.spring(duration: 0.14, bounce: 0.1), value: peek?.id)
     }
 
     /// Deletes the item's screenshots (iOS asks to confirm) and erases what was read from them.

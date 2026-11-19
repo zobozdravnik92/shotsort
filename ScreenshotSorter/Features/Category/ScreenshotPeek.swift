@@ -4,7 +4,8 @@ import SwiftUI
 enum Peek {
     /// +1: flick right deletes. -1 would match triage, where left deletes.
     static let deleteDirection: CGFloat = 1
-    static let holdDuration = 0.3
+    /// Short enough to feel instant, long enough that a quick tap still opens the card.
+    static let holdDuration = 0.12
     static let threshold: CGFloat = 110
 
     /// A long drag, or a quick flick, toward the delete side. A flick counts by where the card
@@ -114,7 +115,7 @@ struct PeekOverlay: View {
                     .padding(.vertical, 60)
                     .rotationEffect(.degrees(Double(offset.width / 18)), anchor: .bottom)
                     .offset(offset)
-                    .transition(.scale(scale: 0.85).combined(with: .opacity))
+                    .transition(.scale(scale: 0.92).combined(with: .opacity))
             }
         }
         .allowsHitTesting(false)
