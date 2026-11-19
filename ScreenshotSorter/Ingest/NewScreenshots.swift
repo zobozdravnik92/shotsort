@@ -21,7 +21,15 @@ enum NewScreenshots {
     static func scheduleBackgroundCheck() {
         let request = BGAppRefreshTaskRequest(identifier: taskIdentifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: checkInterval)
-        try? BGTaskScheduler.shared.submit(request)
+        Task {
+            do {
+                try await BGTaskScheduler.shared.submitTaskRequest(request)
+            } catch {
+                // Expected in the Simulator, which doesn't run background tasks.
+                Logger(subsystem: "com.rokpremuz.ScreenshotSorter", category: "Background")
+                    .error("Couldn't schedule the background check: \(String(reflecting: type(of: error)), privacy: .public)")
+            }
+        }
     }
 
     static func shouldNotify(access: PHAuthorizationStatus, alertsOn: Bool, newCount: Int) -> Bool {

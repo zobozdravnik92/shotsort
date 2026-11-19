@@ -67,6 +67,7 @@ final class AppServices {
         providerID = resolution.provider.id
         providerNotice = resolution.notice
         ItemStore.resetInterruptedDeletes(in: container.mainContext)
+        ItemStore.eraseDeletedContent(in: container.mainContext)
     }
 
     func startIngest() {

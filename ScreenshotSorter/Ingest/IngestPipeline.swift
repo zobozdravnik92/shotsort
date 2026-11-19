@@ -99,11 +99,11 @@ actor IngestWorker {
             }
             let done = index + 1
             if done == Self.firstSaveAt || done % Self.batchSize == 0 || done == assets.count {
-                try? modelContext.save()
+                modelContext.saveOrLog()
                 await onProgress(done)
             }
         }
-        try? modelContext.save()
+        modelContext.saveOrLog()
         return modelDisabled
     }
 
@@ -120,7 +120,7 @@ actor IngestWorker {
         )
 
         if (try? ItemStore.attachIfDuplicate(capture, in: modelContext)) != nil {
-            try? modelContext.save()
+            modelContext.saveOrLog()
             return
         }
 
@@ -134,8 +134,8 @@ actor IngestWorker {
                 providerID = extraction.source ?? provider.id
                 consecutiveFailures = 0
             } catch {
-                // Logs the error only, never screenshot text.
-                Self.logger.error("\(provider.id, privacy: .public) failed, using keyword rules: \(String(describing: error), privacy: .public)")
+                // Logs the error type only: some model errors carry parts of the screenshot text.
+                Self.logger.error("\(provider.id, privacy: .public) failed, using keyword rules: \(String(reflecting: type(of: error)), privacy: .public)")
                 consecutiveFailures += 1
                 if consecutiveFailures >= Self.maxConsecutiveFailures {
                     modelDisabled = true
@@ -143,9 +143,10 @@ actor IngestWorker {
                 }
             }
         }
+        extraction.url = Extraction.verifiedURL(extraction.url, in: text)
         ItemStore.insert(capture, extraction: extraction, providerID: providerID, in: modelContext)
         // Saving each item keeps duplicate checks accurate and lets Home fill in as items arrive.
-        try? modelContext.save()
+        modelContext.saveOrLog()
     }
 
     /// Re-sorts items the phone was unsure about with a cloud model, using the stored OCR text only.
@@ -168,10 +169,10 @@ actor IngestWorker {
                 item.title = result.title
                 item.summary = result.summary
                 item.fields = result.fields
-                item.url = result.url
+                item.url = Extraction.verifiedURL(result.url, in: text)
                 item.confidence = result.confidence
                 item.processedBy = cloud.id
-                try? modelContext.save()
+                modelContext.saveOrLog()
                 await breaker.recordSuccess()
                 improved += 1
             } catch {

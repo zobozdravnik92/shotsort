@@ -43,7 +43,7 @@ enum SampleData {
             context.insert(screenshot)
             item.screenshots.append(screenshot)
         }
-        try? context.save()
+        context.saveOrLog()
     }
 
     static func firstItem(in context: ModelContext) -> Item {

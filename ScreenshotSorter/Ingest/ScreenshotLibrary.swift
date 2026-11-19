@@ -10,6 +10,14 @@ enum PhotoAccess {
     }
 }
 
+/// Adds up chunk sizes from Photos callbacks, which may arrive on any thread.
+private final class ByteCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var bytes = 0
+    func add(_ count: Int) { lock.withLock { bytes += count } }
+    var total: Int { lock.withLock { bytes } }
+}
+
 /// Screenshots from the Photos library. Only the screenshot media subtype is ever fetched.
 struct PhotoLibrarySource: ScreenshotSource {
     func owns(_ id: String) -> Bool { !id.hasPrefix(SampleSource.prefix) }
@@ -47,10 +55,23 @@ struct PhotoLibrarySource: ScreenshotSource {
         }
     }
 
+    /// Measures the original file with public API only. Nothing is downloaded: a screenshot that's
+    /// only in iCloud gets an estimate from its pixel size instead.
     func fileSize(for id: String) async -> Int {
         guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject else { return 0 }
+        let estimate = asset.pixelWidth * asset.pixelHeight / 2
         let resources = PHAssetResource.assetResources(for: asset)
-        return resources.lazy.compactMap { $0.value(forKey: "fileSize") as? Int }.first ?? 0
+        guard let original = resources.first(where: { $0.type == .photo }) ?? resources.first else { return estimate }
+        let options = PHAssetResourceRequestOptions()
+        options.isNetworkAccessAllowed = false
+        let counter = ByteCounter()
+        return await withCheckedContinuation { continuation in
+            PHAssetResourceManager.default().requestData(for: original, options: options) { chunk in
+                counter.add(chunk.count)
+            } completionHandler: { error in
+                continuation.resume(returning: error == nil ? counter.total : estimate)
+            }
+        }
     }
 
     /// One request for all assets, so iOS shows a single confirmation.

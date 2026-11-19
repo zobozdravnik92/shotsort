@@ -113,8 +113,9 @@ struct ChatGPTSignIn: Sendable {
     }
 
     static func randomURLSafe(bytes count: Int) -> String {
-        var bytes = [UInt8](repeating: 0, count: count)
-        _ = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+        // SystemRandomNumberGenerator is cryptographically secure on Apple platforms and can't fail silently.
+        var generator = SystemRandomNumberGenerator()
+        let bytes = (0..<count).map { _ in UInt8.random(in: .min ... .max, using: &generator) }
         return base64URL(Data(bytes))
     }
 
@@ -131,6 +132,9 @@ actor ChatGPTTokenStore {
     private let keychain: KeychainStore
     private let signIn: ChatGPTSignIn
     private var tokens: ChatGPTTokens?
+    /// The refresh in progress. Refresh tokens are single-use, so callers that arrive
+    /// during a refresh wait for it instead of starting a second one that would fail.
+    private var refreshing: Task<ChatGPTTokens, Error>?
 
     init(keychain: KeychainStore = KeychainStore(), signIn: ChatGPTSignIn = ChatGPTSignIn()) {
         self.keychain = keychain
@@ -139,17 +143,26 @@ actor ChatGPTTokenStore {
     }
 
     func accessToken() async throws -> String {
-        guard var current = tokens else { throw CloudError.notSignedIn }
-        if current.expiresAt.timeIntervalSinceNow < 60 {
-            do {
-                current = try await signIn.refresh(current)
-                tokens = current
-                Self.save(current, to: keychain)
-            } catch {
-                throw CloudError.notSignedIn
-            }
+        guard let current = tokens else { throw CloudError.notSignedIn }
+        guard current.expiresAt.timeIntervalSinceNow < 60 else { return current.accessToken }
+
+        let task: Task<ChatGPTTokens, Error>
+        if let refreshing {
+            task = refreshing
+        } else {
+            let signIn = signIn
+            task = Task { try await signIn.refresh(current) }
+            refreshing = task
         }
-        return current.accessToken
+        defer { if refreshing == task { refreshing = nil } }
+        do {
+            let fresh = try await task.value
+            tokens = fresh
+            Self.save(fresh, to: keychain)
+            return fresh.accessToken
+        } catch {
+            throw CloudError.notSignedIn
+        }
     }
 
     static func load(from keychain: KeychainStore) -> ChatGPTTokens? {

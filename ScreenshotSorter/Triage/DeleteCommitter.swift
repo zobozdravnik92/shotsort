@@ -29,13 +29,12 @@ struct DeleteCommitter: AssetDeleting {
         let bytes = item.totalBytes
         let wasNew = item.status == .new
         guard await deleter.delete(ids) else { return false }
-        item.status = .deleted
-        item.reviewedAt = .now
+        item.markDeleted()
         let stats = ItemStore.stats(in: context)
         stats.totalDeleted += 1
         stats.bytesFreed += bytes
         if wasNew { stats.totalReviewed += 1 }
-        try? context.save()
+        context.saveOrLog()
         return true
     }
 }

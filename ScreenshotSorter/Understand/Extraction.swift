@@ -43,6 +43,25 @@ struct Extraction: Sendable, Equatable {
         return String(text.prefix(length - 1)).trimmingCharacters(in: .whitespaces) + "…"
     }
 
+    /// A model's link is kept only if its website appears in the screenshot text, so text in a
+    /// screenshot can't make a model invent a link somewhere else. Otherwise uses the first link in the text.
+    static func verifiedURL(_ candidate: String?, in text: String) -> String? {
+        guard let candidate, let host = webHost(of: candidate),
+              text.lowercased().contains(host) else { return firstURL(in: text) }
+        return candidate
+    }
+
+    /// "https://www.Example.com/a" → "example.com". Nil unless it's an http(s) link with a host.
+    static func webHost(of link: String) -> String? {
+        let trimmed = link.trimmingCharacters(in: .whitespacesAndNewlines)
+        let withScheme = trimmed.contains("://") ? trimmed : "https://" + trimmed
+        guard let url = URL(string: withScheme),
+              let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
+              var host = url.host()?.lowercased(), host.contains(".") else { return nil }
+        if host.hasPrefix("www.") { host.removeFirst(4) }
+        return host
+    }
+
     /// The first web link in some text, if any.
     static func firstURL(in text: String) -> String? {
         guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return nil }

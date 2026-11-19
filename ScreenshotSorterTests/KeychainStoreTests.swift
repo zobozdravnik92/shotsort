@@ -1,10 +1,17 @@
 import Foundation
+import Security
 import Testing
 @testable import ScreenshotSorter
 
-struct KeychainStoreTests {
+final class KeychainStoreTests {
     /// A separate service per test so nothing touches real keys.
     private let store = KeychainStore(service: "com.rokpremuz.ScreenshotSorter.tests.\(UUID().uuidString)")
+
+    /// Removes everything this test saved, so test entries don't pile up in the Keychain.
+    deinit {
+        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: store.service]
+        SecItemDelete(query as CFDictionary)
+    }
 
     @Test func savesReadsAndDeletes() throws {
         #expect(store.read("key") == nil)

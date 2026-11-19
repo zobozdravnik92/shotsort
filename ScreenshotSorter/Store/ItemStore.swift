@@ -95,7 +95,7 @@ enum ItemStore {
         if item.status == .new { stats(in: context).totalReviewed += 1 }
         item.status = .kept
         item.reviewedAt = .now
-        try? context.save()
+        context.saveOrLog()
     }
 
     /// Deletes queued in a triage session that never finished (for example, the app was closed) go back to the pile.
@@ -107,19 +107,32 @@ enum ItemStore {
             item.status = .new
             item.reviewedAt = nil
         }
-        try? context.save()
+        context.saveOrLog()
+    }
+
+    /// Erases leftover text from items deleted before deleting also erased content.
+    static func eraseDeletedContent(in context: ModelContext) {
+        let deletedRaw = ItemStatus.deleted.rawValue
+        let descriptor = FetchDescriptor<Item>(predicate: #Predicate { $0.statusRaw == deletedRaw && $0.title != "" })
+        guard let leftovers = try? context.fetch(descriptor), !leftovers.isEmpty else { return }
+        for item in leftovers {
+            let reviewedAt = item.reviewedAt
+            item.markDeleted()
+            item.reviewedAt = reviewedAt
+        }
+        context.saveOrLog()
     }
 
     /// Removes all items and screenshots so they get processed again. Keeps stats.
     static func wipeItems(in context: ModelContext) {
         for item in (try? context.fetch(FetchDescriptor<Item>())) ?? [] { context.delete(item) }
         for screenshot in (try? context.fetch(FetchDescriptor<Screenshot>())) ?? [] { context.delete(screenshot) }
-        try? context.save()
+        context.saveOrLog()
     }
 
     static func wipeAll(in context: ModelContext) {
         wipeItems(in: context)
         for stats in (try? context.fetch(FetchDescriptor<Stats>())) ?? [] { context.delete(stats) }
-        try? context.save()
+        context.saveOrLog()
     }
 }

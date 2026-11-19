@@ -98,7 +98,7 @@ final class TriageSession {
             let ids = queued.flatMap { $0.screenshots.map(\.assetID) }
             let pending = queued.reduce(0) { $0 + $1.totalBytes }
             if await deleter.delete(ids) {
-                for item in queued { item.status = .deleted }
+                for item in queued { item.markDeleted() }
                 deleted = queued.count
                 bytes = pending
             } else {
@@ -118,7 +118,7 @@ final class TriageSession {
         stats.totalDeleted += deleted
         stats.bytesFreed += bytes
         stats.bestStreak = max(stats.bestStreak, bestStreak)
-        try? context.save()
+        context.saveOrLog()
         // History stays so the counters keep showing this session's totals behind the summary.
 
         return SessionResult(

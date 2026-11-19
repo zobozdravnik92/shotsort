@@ -71,6 +71,21 @@ extension Item {
         return value
     }
 
+    /// Marks the item deleted and erases everything read from its screenshots.
+    /// The row stays (with asset IDs and sizes) only so the same screenshots aren't processed again.
+    func markDeleted() {
+        status = .deleted
+        reviewedAt = .now
+        title = ""
+        summary = ""
+        fields = [:]
+        url = nil
+        for screenshot in screenshots {
+            screenshot.ocrText = ""
+            screenshot.imageHash = ""
+        }
+    }
+
     /// A field value ready to show, or nil when it's missing.
     func displayValue(for key: String) -> String? {
         guard let raw = fields[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return nil }
