@@ -51,7 +51,7 @@ struct CategoryListView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            LazyVStack(spacing: 8) {
                 ScreenHeader(title: category.name, subtitle: subtitle)
                 if shown.isEmpty {
                     ThemedPanel(category: category) {

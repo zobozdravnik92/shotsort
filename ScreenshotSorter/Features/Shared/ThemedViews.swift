@@ -34,10 +34,11 @@ struct ScreenHeader: View {
 struct ThemedPanel<Content: View>: View {
     var category: ItemCategory = .other
     var padding: CGFloat = 16
+    var cornerRadius: CGFloat = 24
     @ViewBuilder let content: Content
 
     @Environment(\.theme) private var theme
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 24, style: .continuous) }
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: cornerRadius, style: .continuous) }
 
     var body: some View {
         content
