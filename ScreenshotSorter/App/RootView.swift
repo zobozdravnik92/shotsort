@@ -30,7 +30,13 @@ struct RootView: View {
         .preferredColorScheme(services.skins.selected.colorScheme)
         .task {
             guard !AppServices.isHostingTests else { return }
+            // Plan first: Superboost includes every skin, so the chosen skin must not be reset before it's known.
+            await services.plans.start()
+            services.skins.setIncludedWithPlan(services.plans.current == .superboost)
             await services.skins.start()
+        }
+        .onChange(of: services.plans.current) { _, plan in
+            services.skins.setIncludedWithPlan(plan == .superboost)
         }
         .task {
             guard !AppServices.isHostingTests else { return }

@@ -19,6 +19,8 @@ final class Item {
     /// Date of the newest source screenshot, used for sorting.
     var savedAt: Date
     var confidence: Double
+    /// Next steps Boost suggested, as JSON. Optional so existing stores open without a migration step.
+    var actionsData: Data? = nil
 
     init(
         category: ItemCategory,
@@ -63,6 +65,17 @@ extension Item {
 
     var processedInCloud: Bool { !Self.onDeviceProviders.contains(processedBy) }
 
+    /// Next steps Boost suggested that haven't been done or dismissed yet.
+    var actions: [ItemAction] {
+        get { actionsData.flatMap { try? JSONDecoder().decode([ItemAction].self, from: $0) } ?? [] }
+        set { actionsData = newValue.isEmpty ? nil : try? JSONEncoder().encode(newValue) }
+    }
+
+    /// Removes an action once it's done or dismissed.
+    func removeAction(_ action: ItemAction) {
+        actions.removeAll { $0 == action }
+    }
+
     /// A tappable web link, adding https:// when the model left the scheme off.
     var link: URL? {
         guard let url, !url.isEmpty else { return nil }
@@ -80,6 +93,7 @@ extension Item {
         summary = ""
         fields = [:]
         url = nil
+        actionsData = nil
         for screenshot in screenshots {
             screenshot.ocrText = ""
             screenshot.imageHash = ""

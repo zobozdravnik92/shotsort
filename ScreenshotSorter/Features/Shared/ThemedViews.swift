@@ -38,17 +38,17 @@ struct ThemedPanel<Content: View>: View {
     @ViewBuilder let content: Content
 
     @Environment(\.theme) private var theme
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: cornerRadius, style: .continuous) }
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: theme.radius(cornerRadius), style: .continuous) }
 
     var body: some View {
         content
             .foregroundStyle(theme.cardInk(category))
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.cardFill(category), in: shape)
+            .background { shape.fill(theme.cardFill(category)).themedShadow(theme) }
             .overlay {
                 if let outline = theme.cardOutline {
-                    shape.strokeBorder(outline, lineWidth: 3)
+                    shape.strokeBorder(outline, lineWidth: theme.outlineWidth)
                 }
             }
     }

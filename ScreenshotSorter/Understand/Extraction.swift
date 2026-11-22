@@ -9,6 +9,8 @@ struct Extraction: Sendable, Equatable {
     var url: String?
     /// Self-reported, 0–1. Under 0.5 is a candidate for Boost.
     var confidence: Double
+    /// Next steps, from Boost only. Cleaned with `ItemAction.cleaned` against the screenshot text.
+    var actions: [ItemAction] = []
     /// The provider that produced this, when it differs from the one that was asked (Boost hands off to the cloud).
     var source: String? = nil
 

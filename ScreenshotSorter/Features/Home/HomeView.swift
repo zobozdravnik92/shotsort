@@ -7,6 +7,7 @@ struct HomeView: View {
     @State private var triage: TriageTarget?
     @State private var showDebug = false
     @State private var showSettings = false
+    @State private var showPlans = false
     @Environment(\.theme) private var theme
     @Environment(\.scenePhase) private var scenePhase
     @State private var photoAccess = PhotoAccess.status
@@ -41,12 +42,17 @@ struct HomeView: View {
                     emptyState
                 } else {
                     backlogHeader(unreviewed: unreviewed)
+                    NavigationLink(value: SearchRoute()) {
+                        SearchField()
+                    }
+                    .buttonStyle(.plain)
                     CategoryMosaic(summaries: groups.map { category, list in
                         CategorySummary(
                             category: category,
                             itemCount: list.count,
                             screenshotCount: list.reduce(0) { $0 + $1.screenshots.count },
-                            unreviewedCount: list.filter { $0.status == .new }.count
+                            unreviewedCount: list.filter { $0.status == .new }.count,
+                            actionCount: list.reduce(0) { $0 + $1.actions.count }
                         )
                     })
                 }
@@ -74,6 +80,7 @@ struct HomeView: View {
         }
         .navigationDestination(for: ItemCategory.self) { CategoryListView(category: $0) }
         .navigationDestination(for: Item.self) { ItemDetailView(item: $0) }
+        .navigationDestination(for: SearchRoute.self) { _ in SearchView() }
         .fullScreenCover(item: $triage) { TriageView(category: $0.category) }
         .toolbar {
             // Greeting, level with the Settings and Debug buttons. The name is a placeholder until accounts exist.
@@ -95,6 +102,13 @@ struct HomeView: View {
                 }
                 .sharedBackgroundVisibility(.hidden)
             }
+            // Free users see an Upgrade pill beside Settings.
+            if services.plans.isFree {
+                ToolbarItem(placement: .topBarTrailing) {
+                    UpgradePill { showPlans = true }
+                }
+                .sharedBackgroundVisibility(.hidden)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Settings", systemImage: "gearshape") { showSettings = true }
             }
@@ -107,6 +121,7 @@ struct HomeView: View {
             #endif
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
+        .sheet(isPresented: $showPlans) { PlansSheet() }
         // A tapped "new screenshots" notification opens triage.
         .onChange(of: router.triageRequest) { _, request in openTriageIfRequested(request) }
         .onAppear { openTriageIfRequested(router.triageRequest) }

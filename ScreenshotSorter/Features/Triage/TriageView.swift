@@ -19,11 +19,14 @@ struct TriageView: View {
     @State private var result: TriageSession.SessionResult?
     @State private var isFinishing = false
     @State private var viewer: ScreenshotViewer.Target?
+    @State private var showBoost = false
 
     var body: some View {
         VStack(spacing: 20) {
             if let session {
                 TriageTopBar(session: session, isFinishing: isFinishing) {
+                    showBoost = true
+                } onDone: {
                     Task { await finish() }
                 }
                 deck(session)
@@ -52,6 +55,7 @@ struct TriageView: View {
         .sheet(item: $result, onDismiss: { dismiss() }) { outcome in
             SessionSummarySheet(result: outcome) { result = nil }
         }
+        .sheet(isPresented: $showBoost) { BoostUsageSheet() }
         .fullScreenCover(item: $viewer) { target in
             ScreenshotViewer(
                 target: target,
@@ -146,10 +150,11 @@ struct TriageView: View {
     }
 }
 
-/// Live counters and the Done button.
+/// Live counters, the Boost badge and the Done button.
 private struct TriageTopBar: View {
     let session: TriageSession
     let isFinishing: Bool
+    let onBoost: () -> Void
     let onDone: () -> Void
 
     var body: some View {
@@ -157,6 +162,7 @@ private struct TriageTopBar: View {
             // One counter: every keep or delete adds one.
             Counter(value: "\(session.reviewedCount)", label: "sorted")
             Spacer(minLength: 4)
+            BoostBadge(action: onBoost)
             Button(action: onDone) {
                 if isFinishing {
                     ProgressView()

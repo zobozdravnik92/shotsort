@@ -51,6 +51,7 @@ enum ItemStore {
             savedAt: capture.createdAt,
             confidence: extraction.confidence
         )
+        item.actions = extraction.actions
         context.insert(item)
         let screenshot = makeScreenshot(capture)
         context.insert(screenshot)

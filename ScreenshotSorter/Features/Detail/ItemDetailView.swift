@@ -46,6 +46,8 @@ struct ItemDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
 
+                ItemActionsSection(item: item)
+
                 if !fieldKeys.isEmpty {
                     ThemedLabel(text: "Details").padding(.top, 8)
                     ThemedPanel {
@@ -91,10 +93,10 @@ struct ItemDetailView: View {
                         },
                         onOpenFull: { viewer = .init(assetIDs: screenshots.map(\.assetID), start: index) }
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: theme.radius(20), style: .continuous))
                     .overlay {
                         if let outline = theme.cardOutline {
-                            RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(outline, lineWidth: 3)
+                            RoundedRectangle(cornerRadius: theme.radius(20), style: .continuous).strokeBorder(outline, lineWidth: theme.outlineWidth)
                         }
                     }
                     .id("shot-\(index)")

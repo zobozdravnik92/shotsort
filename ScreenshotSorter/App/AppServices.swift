@@ -10,6 +10,8 @@ final class AppServices {
     let progress: IngestProgress
     let boost: BoostSettings
     let skins: SkinStore
+    /// The paid Boost plan, if any.
+    let plans = BoostPlanStore()
     private(set) var providerID = FallbackProvider.id
     /// Shown on Home when smart sorting isn't available.
     private(set) var providerNotice: String?

@@ -8,14 +8,19 @@ struct CategoryCard: View {
     @Environment(\.theme) private var theme
 
     private var ink: Color { theme.cardInk(summary.category) }
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 28, style: .continuous) }
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: theme.radius(28), style: .continuous) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
                 badge
                 Spacer(minLength: 8)
-                status
+                VStack(alignment: .trailing, spacing: 6) {
+                    status
+                    if summary.actionCount > 0 {
+                        ActionCountTag(count: summary.actionCount, ink: ink)
+                    }
+                }
             }
             Spacer(minLength: 6)
             Text("\(summary.itemCount)")
@@ -35,10 +40,10 @@ struct CategoryCard: View {
         .foregroundStyle(ink)
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(theme.cardFill(summary.category), in: shape)
+        .background { shape.fill(theme.cardFill(summary.category)).themedShadow(theme) }
         .overlay {
             if let outline = theme.cardOutline {
-                shape.strokeBorder(outline, lineWidth: 3)
+                shape.strokeBorder(outline, lineWidth: theme.outlineWidth)
             }
         }
         .contentShape(shape)
@@ -59,25 +64,34 @@ struct CategoryCard: View {
     @ViewBuilder
     private var status: some View {
         if summary.unreviewedCount > 0 {
-            Text(theme.text("\(summary.unreviewedCount) new"))
-                .font(.system(size: 12, weight: .bold, design: theme.fontDesign))
-                .foregroundStyle(theme.cardFill(summary.category))
-                .padding(.horizontal, 9)
-                .padding(.vertical, 5)
-                .background(ink, in: Capsule())
+            ThemedTag(text: "\(summary.unreviewedCount) new", tint: theme.newTagTint, ink: ink, fill: theme.cardFill(summary.category))
         } else {
             Image(systemName: "checkmark")
                 .font(.system(size: 12, weight: .heavy))
                 .foregroundStyle(theme.cardFill(summary.category))
                 .frame(width: 26, height: 26)
-                .background(ink, in: Circle())
+                .background(theme.newTagTint == nil ? ink : Color.clear, in: Circle())
+                .overlay { if theme.newTagTint != nil { Circle().strokeBorder(ink.opacity(0.3), lineWidth: 1) } }
         }
     }
 
     private var accessibilityText: String {
         let items = summary.itemCount == 1 ? "1 item" : "\(summary.itemCount) items"
         let new = summary.unreviewedCount > 0 ? ", \(summary.unreviewedCount) new" : ", all reviewed"
-        return "\(summary.category.name), \(items)\(new)"
+        let actions = summary.actionCount == 0 ? "" : summary.actionCount == 1 ? ", 1 action" : ", \(summary.actionCount) actions"
+        return "\(summary.category.name), \(items)\(new)\(actions)"
+    }
+}
+
+/// "4 actions": next steps Boost found. Outlined, so it reads apart from the filled "new" tag.
+struct ActionCountTag: View {
+    let count: Int
+    let ink: Color
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        ThemedTag(text: count == 1 ? "1 action" : "\(count) actions", tint: theme.actionTagTint, ink: ink, fill: .clear,
+                  outlined: true, systemImage: "flame.fill")
     }
 }
 
@@ -86,7 +100,7 @@ struct CategoryCard: View {
         CategoryCard(summary: .init(category: .other, itemCount: 14, screenshotCount: 14, unreviewedCount: 14), isHero: true)
             .frame(height: 230)
         HStack(spacing: 12) {
-            CategoryCard(summary: .init(category: .jobs, itemCount: 3, screenshotCount: 3, unreviewedCount: 2))
+            CategoryCard(summary: .init(category: .jobs, itemCount: 3, screenshotCount: 3, unreviewedCount: 2, actionCount: 4))
                 .frame(height: 240)
             CategoryCard(summary: .init(category: .receipts, itemCount: 1, screenshotCount: 1, unreviewedCount: 0))
                 .frame(height: 160)

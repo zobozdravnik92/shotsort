@@ -3,6 +3,8 @@ import SwiftUI
 /// One item in a category list, as a card in the skin's style.
 struct ItemRow: View {
     let item: Item
+    /// Matching screenshot text, shown in search results.
+    var snippet: String? = nil
 
     @Environment(\.theme) private var theme
 
@@ -17,13 +19,11 @@ struct ItemRow: View {
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                     Spacer(minLength: 0)
+                    if !item.actions.isEmpty {
+                        ActionCountTag(count: item.actions.count, ink: theme.cardInk(item.category))
+                    }
                     if item.status == .new {
-                        Text(theme.text("New"))
-                            .font(.system(size: 10, weight: .bold, design: theme.fontDesign))
-                            .foregroundStyle(theme.cardFill(item.category))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(theme.cardInk(item.category), in: Capsule())
+                        ThemedTag(text: "New", tint: theme.newTagTint, ink: theme.cardInk(item.category), fill: theme.cardFill(item.category))
                     }
                 }
                 if !item.keyFieldValues.isEmpty {
@@ -34,9 +34,18 @@ struct ItemRow: View {
                                 .lineLimit(1)
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
-                                .overlay(Capsule().strokeBorder(theme.cardInk(item.category).opacity(0.5), lineWidth: 1.5))
+                                // Hairline skins get the reference's quiet grey chip; poster skins keep a bold outline.
+                                .background(theme.outlineWidth < 2 ? theme.cardInk(item.category).opacity(0.06) : .clear, in: Capsule())
+                                .overlay(Capsule().strokeBorder(theme.cardInk(item.category).opacity(theme.outlineWidth < 2 ? 0.14 : 0.5),
+                                                                lineWidth: theme.outlineWidth < 2 ? 1 : 1.5))
                         }
                     }
+                }
+                if let snippet {
+                    Text("“\(snippet)”")
+                        .font(.system(size: 13, design: theme.fontDesign))
+                        .lineLimit(2)
+                        .opacity(0.75)
                 }
                 Text(item.savedAt, format: .dateTime.day().month().year())
                     .font(.system(size: 11, weight: .medium, design: theme.fontDesign))

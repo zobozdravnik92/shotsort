@@ -29,7 +29,16 @@ final class SkinStore {
     /// Debug builds unlock every skin, so paid ones can be tried without the App Store.
     var unlocksAllSkins = false
 
-    func isUnlocked(_ skin: Skin) -> Bool { skin.isFree || unlocksAllSkins || owned.contains(skin) }
+    /// True while the user has Superboost, which includes every skin.
+    private(set) var includedWithPlan = false
+
+    func isUnlocked(_ skin: Skin) -> Bool { skin.isFree || unlocksAllSkins || includedWithPlan || owned.contains(skin) }
+
+    /// Called when the Boost plan changes. Losing Superboost falls back to Sunshine unless the skin was bought.
+    func setIncludedWithPlan(_ included: Bool) {
+        includedWithPlan = included
+        if !isUnlocked(selected) { selected = .sunshine }
+    }
 
     /// Loads prices and purchases, and listens for purchases made elsewhere (other devices, Ask to Buy, refunds).
     func start() async {

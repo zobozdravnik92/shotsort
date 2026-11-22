@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// App skins. Sunshine is free and the default; Retro Analog is a one-time $1 purchase.
+/// App skins. Sunshine is free and the default; the others are one-time $1 purchases, and all come with Superboost.
 enum Skin: String, CaseIterable, Identifiable, Sendable {
-    case sunshine, retroAnalog
+    case sunshine, retroAnalog, graphite
 
     var id: String { rawValue }
 
@@ -10,6 +10,16 @@ enum Skin: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .sunshine: "Sunshine"
         case .retroAnalog: "Retro Analog"
+        case .graphite: "Graphite"
+        }
+    }
+
+    /// One line under the name in Settings.
+    var tagline: String {
+        switch self {
+        case .sunshine: "Bright and bold"
+        case .retroAnalog: "Radio-dial greens and LCD type"
+        case .graphite: "Dark, quiet and precise"
         }
     }
 
@@ -20,6 +30,7 @@ enum Skin: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .sunshine: nil
         case .retroAnalog: "com.rokpremuz.ScreenshotSorter.skin.retro"
+        case .graphite: "com.rokpremuz.ScreenshotSorter.skin.graphite"
         }
     }
 
@@ -27,13 +38,14 @@ enum Skin: String, CaseIterable, Identifiable, Sendable {
         allCases.first { $0.productID == id }
     }
 
-    /// Both skins are designed on light surfaces.
-    var colorScheme: ColorScheme? { .light }
+    /// Sunshine and Retro Analog are light; Graphite is dark, so sheets and system controls go dark with it.
+    var colorScheme: ColorScheme? { self == .graphite ? .dark : .light }
 
     var theme: Theme {
         switch self {
         case .sunshine: .sunshine
         case .retroAnalog: .retroAnalog
+        case .graphite: .graphite
         }
     }
 }
@@ -67,6 +79,19 @@ struct Theme: Sendable {
     var buttonFill: Color? = nil
     var buttonInk: Color? = nil
 
+    // Surfaces
+    /// Card outline thickness: thick for the poster skins, a hairline for Graphite.
+    var outlineWidth: CGFloat = 3
+    /// Multiplies every card's corner radius.
+    var cornerScale: CGFloat = 1
+    /// A tight shadow under cards and buttons, so they sit just above the page.
+    var cardShadow = false
+    /// When set, small tags are tinted (coloured text on a faint fill) instead of solid ink.
+    var newTagTint: Color? = nil
+    var actionTagTint: Color? = nil
+    /// Settings swatch colours; nil uses the card colours.
+    var swatchColors: [Color]? = nil
+
     func font(_ size: CGFloat) -> Font {
         if let fontName { return .custom(fontName, size: size * typeScale) }
         return .system(size: size * typeScale, weight: weight, design: fontDesign)
@@ -75,6 +100,8 @@ struct Theme: Sendable {
     func tracking(_ size: CGFloat) -> CGFloat {
         size * typeScale * trackingFactor
     }
+
+    func radius(_ base: CGFloat) -> CGFloat { base * cornerScale }
 
     /// Extra space between wrapped lines of display type; LCD fonts touch without it.
     var wrapSpacing: CGFloat { max(lineGap, 0) }
@@ -85,7 +112,7 @@ struct Theme: Sendable {
 
     /// Three colours shown as a swatch in Settings.
     var swatch: [Color] {
-        [cardFill(.jobs), cardFill(.posts), cardInk(.posts)]
+        swatchColors ?? [cardFill(.jobs), cardFill(.posts), cardInk(.posts)]
     }
 }
 
@@ -123,6 +150,78 @@ extension Theme {
         buttonFill: Color(hex: 0xFFFFFF),
         buttonInk: Color(hex: 0x0E100C)
     )
+}
+
+extension Theme {
+    /// Charcoal surfaces with hairline borders, small rounded corners, soft shadows and tinted tags,
+    /// like a modern dark dashboard. Monochrome cards; colour only in tags and buttons.
+    static let graphite = Theme(
+        background: Color(hex: 0x131313),
+        dotColor: nil,
+        ink: Color(hex: 0xEDEDED),
+        fadedInk: Color(hex: 0xEDEDED).opacity(0.36),
+        // Light grey, like the reference's icons and links; colour is kept for tags.
+        accent: Color(hex: 0xD6D6D6),
+        cardOutline: Color(hex: 0x2B2B2B),
+        cardFill: { _ in Color(hex: 0x1C1C1C) },
+        cardInk: { _ in Color(hex: 0xEDEDED) },
+        weight: .semibold,
+        typeScale: 0.92,
+        trackingFactor: -0.02,
+        lineGap: -2,
+        buttonFill: Color(hex: 0xF4F4F4),
+        buttonInk: Color(hex: 0x111111),
+        outlineWidth: 1,
+        cornerScale: 0.5,
+        cardShadow: true,
+        newTagTint: Color(hex: 0xA593F8),
+        actionTagTint: Color(hex: 0x3DD68C),
+        swatchColors: [Color(hex: 0x2B2B2B), Color(hex: 0xA593F8), Color(hex: 0x3DD68C)]
+    )
+}
+
+extension View {
+    /// The skin's card shadow, if it has one: tight and dark, just enough to lift a card off the page.
+    func themedShadow(_ theme: Theme) -> some View {
+        shadow(color: .black.opacity(theme.cardShadow ? 0.45 : 0), radius: theme.cardShadow ? 1.5 : 0, y: theme.cardShadow ? 1 : 0)
+    }
+}
+
+/// A small tag: solid ink on poster skins, or a tinted pill on skins that set a tint.
+struct ThemedTag: View {
+    let text: String
+    let tint: Color?
+    /// Used when there's no tint: ink fill with the card colour as text, or an outline.
+    let ink: Color
+    let fill: Color
+    var outlined = false
+    var systemImage: String? = nil
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        HStack(spacing: 3) {
+            if let systemImage {
+                Image(systemName: systemImage).font(.system(size: 10, weight: .bold))
+            }
+            Text(theme.text(text))
+                .font(.system(size: 12, weight: .bold, design: theme.fontDesign))
+        }
+        .lineLimit(1)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .foregroundStyle(tint ?? (outlined ? ink : fill))
+        .background {
+            if let tint {
+                Capsule().fill(tint.opacity(0.14))
+                Capsule().strokeBorder(tint.opacity(0.3), lineWidth: 1)
+            } else if outlined {
+                Capsule().strokeBorder(ink, lineWidth: 1.5)
+            } else {
+                Capsule().fill(ink)
+            }
+        }
+        .fixedSize()
+    }
 }
 
 /// Category colours, picked from the reference designs.

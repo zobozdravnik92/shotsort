@@ -30,7 +30,7 @@ struct AppearanceSection: View {
         } header: {
             Text("Appearance")
         } footer: {
-            Text("Skins are one-time purchases and work on every device with the same Apple ID.")
+            Text("Skins are one-time purchases and work on every device with the same Apple ID. Superboost includes every skin.")
         }
     }
 
@@ -39,7 +39,7 @@ struct AppearanceSection: View {
             SkinSwatch(theme: skin.theme)
             VStack(alignment: .leading, spacing: 2) {
                 Text(skin.name).foregroundStyle(.primary)
-                Text(skin.isFree ? "Bright and bold" : "Radio-dial greens and LCD type")
+                Text(skin.tagline)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -56,7 +56,7 @@ struct AppearanceSection: View {
         if store.selected == skin {
             Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(.tint)
         } else if store.isUnlocked(skin) {
-            Text(skin.isFree ? "Free" : (store.owned.contains(skin) ? "Owned" : "Unlocked in debug"))
+            Text(skin.isFree ? "Free" : store.owned.contains(skin) ? "Owned" : store.includedWithPlan ? "Superboost" : "Unlocked in debug")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         } else if buying == skin {

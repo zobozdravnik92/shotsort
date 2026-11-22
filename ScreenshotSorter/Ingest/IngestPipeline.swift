@@ -171,6 +171,7 @@ actor IngestWorker {
                 item.fields = result.fields
                 item.url = Extraction.verifiedURL(result.url, in: text)
                 item.confidence = result.confidence
+                item.actions = result.actions
                 item.processedBy = cloud.id
                 modelContext.saveOrLog()
                 await breaker.recordSuccess()

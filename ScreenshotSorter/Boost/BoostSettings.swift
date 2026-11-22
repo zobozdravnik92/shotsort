@@ -10,11 +10,16 @@ final class BoostSettings {
         static let enabled = "boost.enabled"
         static let selected = "boost.selected"
         static let modelPrefix = "boost.model."
+        static let usage = "boost.usage"
     }
 
     private(set) var connected: Set<CloudProviderKind> = []
     private(set) var lastError: String?
     private(set) var lastErrorAt: Date?
+    /// Counts of screenshots Boost sorted, per month.
+    private(set) var usage: BoostUsage {
+        didSet { defaults.set(try? JSONEncoder().encode(usage), forKey: Key.usage) }
+    }
 
     var isEnabled: Bool {
         didSet { defaults.set(isEnabled, forKey: Key.enabled) }
@@ -32,6 +37,7 @@ final class BoostSettings {
         self.keychain = keychain
         self.defaults = defaults
         self.tokenStore = ChatGPTTokenStore(keychain: keychain)
+        self.usage = defaults.data(forKey: Key.usage).flatMap { try? JSONDecoder().decode(BoostUsage.self, from: $0) } ?? BoostUsage()
         self.isEnabled = defaults.bool(forKey: Key.enabled)
         self.selected = defaults.string(forKey: Key.selected).flatMap(CloudProviderKind.init(rawValue:))
         self.connected = Set(CloudProviderKind.allCases.filter { keychain.read($0.keychainAccount) != nil })
@@ -89,6 +95,10 @@ final class BoostSettings {
         lastErrorAt = .now
     }
 
+    func recordUse(succeeded: Bool) {
+        if succeeded { usage.recordSuccess() } else { usage.recordFailure() }
+    }
+
     func clearError() {
         lastError = nil
         lastErrorAt = nil
@@ -96,6 +106,13 @@ final class BoostSettings {
 
     /// The cloud model to use right now, or nil when Boost is off or not set up.
     func makeCloudProvider() -> (any AIProvider)? {
+        guard let provider = makeUncountedProvider() else { return nil }
+        return CountingProvider(inner: provider) { [weak self] succeeded in
+            await self?.recordUse(succeeded: succeeded)
+        }
+    }
+
+    private func makeUncountedProvider() -> (any AIProvider)? {
         guard isActive, let kind = selected else { return nil }
         switch kind {
         case .claude:

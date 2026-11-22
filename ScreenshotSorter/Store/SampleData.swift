@@ -46,6 +46,36 @@ enum SampleData {
         context.saveOrLog()
     }
 
+    #if DEBUG
+    /// Debug menu: gives jobs, receipts and people items the kind of actions Boost would find,
+    /// so the tags and the actions list can be seen without a cloud model. Returns how many items changed.
+    static func addSampleActions(to items: [Item]) -> Int {
+        let inTwoWeeks = Calendar.current.date(byAdding: .day, value: 14, to: .now) ?? .now
+        let day = inTwoWeeks.formatted(.iso8601.year().month().day())
+        var changed = 0
+        for item in items where item.status != .deleted && item.actions.isEmpty {
+            switch item.category {
+            case .jobs:
+                item.actions = [
+                    ItemAction(kind: .reminder, title: "Remind me to apply", date: day),
+                    ItemAction(kind: .draft, title: "Draft a short intro", detail: "Hi, I saw your post about the \(item.title) role and would love to talk. My portfolio is attached."),
+                ]
+            case .receipts:
+                item.actions = [ItemAction(kind: .reminder, title: "Return window ends", date: day)]
+            case .people:
+                item.actions = [ItemAction(kind: .draft, title: "Draft a follow-up", detail: "Great to connect! Would you be up for a quick coffee chat next week?")]
+            case .posts:
+                item.actions = [ItemAction(kind: .calendar, title: "Add the event to your calendar", date: day)]
+            default:
+                continue
+            }
+            changed += 1
+        }
+        if changed > 0 { items.first?.modelContext?.saveOrLog() }
+        return changed
+    }
+    #endif
+
     static func firstItem(in context: ModelContext) -> Item {
         if let item = try? context.fetch(FetchDescriptor<Item>(sortBy: [SortDescriptor(\.savedAt, order: .reverse)])).first {
             return item

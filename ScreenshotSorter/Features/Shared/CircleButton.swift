@@ -19,7 +19,7 @@ struct CircleButton: View {
                 .frame(width: size, height: size)
                 .background(theme.cardFill(.other), in: Circle())
                 .overlay {
-                    if let outline = theme.cardOutline { Circle().strokeBorder(outline, lineWidth: 3) }
+                    if let outline = theme.cardOutline { Circle().strokeBorder(outline, lineWidth: theme.outlineWidth) }
                 }
                 .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
                 .opacity(isEnabled ? 1 : 0.4)

@@ -6,6 +6,8 @@ struct SettingsView: View {
     @State private var unsureCount = 0
     @State private var isImproving = false
     @State private var improveMessage: String?
+    @State private var showPlans = false
+    @Environment(\.theme) private var theme
 
     var body: some View {
         @Bindable var boost = services.boost
@@ -18,8 +20,31 @@ struct SettingsView: View {
                 NewScreenshotsSection()
 
                 Section {
-                    Toggle("Boost with a cloud model", isOn: $boost.isEnabled)
-                        .disabled(boost.connected.isEmpty)
+                    // Locked until there's a paid plan or the user's own key; then it's a switch.
+                    if boost.connected.isEmpty && services.plans.isFree {
+                        Button {
+                            showPlans = true
+                        } label: {
+                            Label {
+                                Text("Upgrade to Unlock")
+                            } icon: {
+                                Image(systemName: "flame.fill").foregroundStyle(.orange)
+                            }
+                            .font(.body.weight(.semibold))
+                            // The skin's own button colours, like the wide buttons elsewhere.
+                            .foregroundStyle(theme.buttonInk ?? .white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(theme.buttonFill ?? theme.accent, in: Capsule())
+                            .contentShape(Capsule())
+                        }
+                        .buttonStyle(PressableCardStyle())
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
+                    } else {
+                        Toggle("Boost with a cloud model", isOn: $boost.isEnabled)
+                            .disabled(boost.connected.isEmpty)
+                    }
                     if connectedKinds.count > 1 {
                         Picker("Use", selection: $boost.selected) {
                             ForEach(connectedKinds) { kind in
@@ -31,11 +56,11 @@ struct SettingsView: View {
                     Text("Boost")
                 } footer: {
                     Text(boost.connected.isEmpty
-                         ? "Connect a model below to turn on Boost. Sorting stays on this iPhone until you do."
+                         ? "Get Boost with a plan, or connect your own API key below. Until then, sorting stays on this iPhone."
                          : "With Boost on, only the text of screenshots this iPhone isn't sure about is sent to the model you choose. Images never leave your phone. Usage is billed to your own account.")
                 }
 
-                Section("Connect") {
+                Section {
                     ForEach(boost.availableKinds) { kind in
                         NavigationLink {
                             BoostProviderView(kind: kind)
@@ -44,6 +69,14 @@ struct SettingsView: View {
                                 Text(boost.connected.contains(kind) ? "Connected" : "Not set")
                             }
                         }
+                    }
+                } header: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Connect")
+                        Text("Unlock Boost by entering your own API key")
+                            .font(.footnote)
+                            .textCase(nil)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -85,6 +118,7 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background { ThemedBackground() }
             .navigationTitle("Settings")
+            .sheet(isPresented: $showPlans) { PlansSheet() }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

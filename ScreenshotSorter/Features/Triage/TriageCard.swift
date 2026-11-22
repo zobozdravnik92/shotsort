@@ -5,7 +5,7 @@ struct TriageCard: View {
     let item: Item
 
     @Environment(\.theme) private var theme
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 28, style: .continuous) }
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: theme.radius(28), style: .continuous) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -46,11 +46,11 @@ struct TriageCard: View {
             // Shadow on the shape only, so it doesn't blur behind the text.
             shape
                 .fill(theme.cardFill(item.category))
-                .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
+                .shadow(color: .black.opacity(theme.cardShadow ? 0.5 : 0.12), radius: 16, y: 6)
         }
         .overlay {
             if let outline = theme.cardOutline {
-                shape.strokeBorder(outline, lineWidth: 3)
+                shape.strokeBorder(outline, lineWidth: theme.outlineWidth)
             }
         }
     }
@@ -63,6 +63,7 @@ struct SwipeableCard: View {
     let onTap: () -> Void
 
     @State private var offset: CGSize = .zero
+    @Environment(\.theme) private var theme
     private let threshold: CGFloat = 110
 
     private var progress: Double { min(abs(offset.width) / threshold, 1) }
@@ -70,7 +71,7 @@ struct SwipeableCard: View {
     var body: some View {
         TriageCard(item: item)
             .overlay {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: theme.radius(28), style: .continuous)
                     .fill(offset.width >= 0 ? Color.green : Color.red)
                     .opacity(progress * 0.22)
                     .allowsHitTesting(false)

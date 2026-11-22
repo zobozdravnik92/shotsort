@@ -6,6 +6,8 @@ struct CategorySummary: Identifiable, Equatable {
     let itemCount: Int
     let screenshotCount: Int
     let unreviewedCount: Int
+    /// Next steps Boost found in this category that haven't been done yet.
+    var actionCount = 0
 
     var id: ItemCategory { category }
 }

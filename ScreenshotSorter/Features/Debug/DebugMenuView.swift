@@ -59,6 +59,9 @@ struct DebugMenuView: View {
                             message = "Couldn't add mocks: \(error.localizedDescription)"
                         }
                     }
+                    Button("Add sample Boost actions", systemImage: "flame") {
+                        message = "Added actions to \(SampleData.addSampleActions(to: items)) items."
+                    }
                     Button("Import sample images from Files", systemImage: "square.and.arrow.down") {
                         isImporting = true
                     }

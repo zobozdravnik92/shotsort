@@ -16,6 +16,21 @@
       "productID": "com.rokpremuz.ScreenshotSorter.skin.retro",
       "referenceName": "Retro Analog skin",
       "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "1.00",
+      "familyShareable": true,
+      "internalID": "6740000004",
+      "localizations": [
+        {
+          "description": "Dark charcoal surfaces, hairline borders and tinted tags for Screenshot Sorter.",
+          "displayName": "Graphite skin",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.rokpremuz.ScreenshotSorter.skin.graphite",
+      "referenceName": "Graphite skin",
+      "type": "NonConsumable"
     }
   ],
   "settings": {
@@ -24,7 +39,59 @@
     "_storefront": "USA",
     "_storeKitErrors": []
   },
-  "subscriptionGroups": [],
+  "subscriptionGroups": [
+    {
+      "id": "21500001",
+      "localizations": [],
+      "name": "Boost",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "4.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "6740000011",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Reads images, sorts every screenshot with a smarter model, and answers questions.",
+              "displayName": "Superboost",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.rokpremuz.ScreenshotSorter.superboost.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Superboost monthly",
+          "subscriptionGroupID": "21500001",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "1.99",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "6740000010",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Cloud sorting and next steps for screenshots your iPhone isn't sure about.",
+              "displayName": "Boost",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.rokpremuz.ScreenshotSorter.boost.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Boost monthly",
+          "subscriptionGroupID": "21500001",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        }
+      ]
+    }
+  ],
   "version": {
     "major": 4,
     "minor": 0

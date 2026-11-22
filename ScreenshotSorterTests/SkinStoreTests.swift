@@ -31,8 +31,23 @@ struct SkinStoreTests {
         _ = try makeSession()
         let store = makeStore()
         await store.loadProducts()
-        #expect(store.products.count == 1)
+        #expect(store.products.count == 2)
         #expect(store.products[.retroAnalog]?.price == 1)
+        #expect(store.products[.graphite]?.price == 1)
+    }
+
+    @Test func superboostIncludesEverySkinAndLosingItFallsBack() async throws {
+        _ = try makeSession()
+        let store = makeStore()
+        await store.refreshEntitlements()
+        store.setIncludedWithPlan(true)
+        #expect(Skin.allCases.allSatisfy(store.isUnlocked))
+        store.select(.graphite)
+        #expect(store.selected == .graphite)
+
+        store.setIncludedWithPlan(false)
+        #expect(store.selected == .sunshine)
+        #expect(!store.isUnlocked(.graphite))
     }
 
     @Test func sunshineIsFreeAndTheDefault() async throws {
